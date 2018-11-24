@@ -29,4 +29,4 @@ The method is easy to implement using SVD, and our experiments show that it is f
 
 ## 소개
 
-df^deflated^  아  진짜 이게 안나와?
+df^deflated^  ::아  진짜 이게 안나와?::
