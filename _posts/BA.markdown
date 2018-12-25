@@ -1,0 +1,102 @@
+ 본 포스팅에서는 semi-supervised learning 방법 중 하나인 Graph based-SSL을 다룰 예정입니다.
+ 글의 전체적인 내용은 고려대학교 강필성 교수님의 Business-Analytics 강의를 참고하였음을 밝힙니다. 또한 M Hein의 강의자료를 참고함도 밝힙니다.
+___
+### 가정
+
+먼저 가정에 대해서 알아봅시다.
+
+**가정 : heavy edge로 연결된 인스턴스들은 같은 라벨을 가질 확률이 높다는 가정**
+
+Cluster assumption: points which can be connected via (many) paths
+through high-density regions are likely to have the same label.
+
+![ㅇㄹ](images/2018/12/ㅇㄹ.png)
+
+Manifold assumption: each class lies on a separate manifold.
+
+![ㅇㅇㅇㄹ](images/2018/12/ㅇㅇㅇㄹ.png)
+
+
+즉, manifold 상의 높은 밀도 지역을 통과하는 path로 연결된 포인트들은 같은 라벨을 가질 확률이 높다는 것입니다
+![ㅇㅇㅇ](images/2018/12/ㅇㅇㅇ.png)
+___
+### Graph construction
+
+Graph-based SSL은 Graph를 기반으로 계산이 됩니다. 베이스로 하는 그래프는 노드와 엣지로 구성이 됩니다.
+
+노드는 라벨된 데이터와 라벨이 되지 않은 데이터 둘 다 포함하는 것입니다. (${ X }_{ l }\cup { X }_{ u }$)
+
+엣지는 feature를 통해 계산된 similarity weight입니다.
+- k-nearest-neighbor graph, unweighted (0,1 weights)
+- fully connected graph, weight decays with distance)
+${ w }_{ ij }\quad =\quad exp(\frac { { -\left\| { x }_{ i }-{ x }_{ j } \right\|  }^{ 2 } }{ { \sigma  }^{ 2 } } )$
+- epsilon-radius graph
+
+
+___
+
+### Algorithm
+
+The mincut algorithm
+
+$y_l$을 먼저 고정시킨 뒤 $\sum _{ i,j }^{  }{ { w }_{ ij }\left| { y }_{ i }-{ y }_{ j } \right|  } $을 최소화하는 ${ y }_{ u }\quad \in \quad { \{ 0,1\}  }^{ n-1 }$을
+찾습니다.
+
+아래 optimization 식으로 나타낼 수 있습니다.
+
+$\min _{ y\in { \{ 0,1\}  }^{ n } }{ \infty \sum _{ i=1 }^{ l }{ { ({ y }_{ i }-{ y }_{ li }) }^{ 2 } } +\sum _{ i,j }^{  }{ { { w }_{ i,j }({ y }_{ i }-{ y }_{ j }) }^{ 2 } }  } $
+
+조합 문제이지만 최적화를 통해 polynomial time의 솔루션을 얻을 수 있습니다.
+
+Harmonic function
+
+discrete한 라벨을 continuous한 값을 줌으로써 harmonic function $f$는 $f(x_i) = y_i for i=1,...,l$을 만족합니다.
+- $f$는 energy를 최대화합니다.
+$\sum _{ i\~ j }^{  }{ { w }_{ ij }{ (f({ x }_{ i })-f({ x }_{ j })) }^{ 2 } } $
+- 가우시안 랜덤 필드의 평균
+- 이웃들의 평균
+$f({ x }_{ i })=\frac { \sum _{ j\~ i }^{  }{ { w }_{ if }f({ x }_{ j }) }  }{ \sum _{ j\~ i }^{  }{ { w }_{ if } }  } ,\quad all\quad { x }_{ i }\in \quad { X }_{ u }$
+
+The graph Laplacian
+
+$f$를 graph laplacian을 이용한 closed form을 이용하여 계산할 수 있습니다.
+- $n\times n$ weight matrix W on ${ X }_{ l }{ \cup X }_{ u }$
+- Diagonal degree matrix
+- Graph Laplacian matrix
+
+df![dfefe](images/2018/12/dfefe.png)
+
+Energy: $\frac { 1 }{ 2 } \sum _{ i\~ j }^{  }{ { w }_{ ij }(f({ x }_{ i })-f({ x }_{ j }) } { ) }^{ 2 }={ f }^{ T }\Delta f$
+
+Laplacian을 이용한 Harmonic solution
+
+harmonic solution은 주어진 라벨을 기반으로 에너지를 최소화합니다.
+
+- Partition the Laplacian matrix
+
+- Harmonic solution
+- The normalized Laplacian is often used
+
+
+• Problems with harmonic solution
+
+It fixes the given labels
+What if some labels are wrong?
+Want to be flexible and disagree with given labels occasionally
+It cannot handle new test points directly
+is only defined on
+We have to add new test points to the graph, and find a new harmonic solution
+
+Allow             to be different from      but penalize it  Introduce a balance between labeled data fit and graph energy
+
+solution
+
+dfdf
+![dfdf](images/2018/12/dfdf.png)
+
+assumption이 잘못된 경우
+
+![ㅇㄹㅇㄹ](images/2018/12/ㅇㄹㅇㄹ.png)
+
+
+코드.
