@@ -1,4 +1,10 @@
- 본 포스팅에서는 semi-supervised learning 방법 중 하나인 Graph based-SSL을 다룰 예정입니다.
+---
+layout: "post"
+title: "BA"
+date: "2018-12-25 00:00"
+---
+
+본 포스팅에서는 semi-supervised learning 방법 중 하나인 Graph based-SSL을 다룰 예정입니다.
  글의 전체적인 내용은 고려대학교 강필성 교수님의 Business-Analytics 강의를 참고하였음을 밝힙니다. 또한 M Hein의 강의자료를 참고함도 밝힙니다.
 ___
 ### 가정
