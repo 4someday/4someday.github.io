@@ -1,3 +1,12 @@
+---
+layout: post
+title: NASNet
+subtitle: Nasnet
+gh-repo: 4someday/4someday.github.io
+gh-badge: [star, fork, follow]
+tags: [nasnet]
+---
+
 안녕하세요. 이번 포스트에서는 NASNet을 포스팅하려고 합니다.
 
 먼저 NASnet 은 다음과 같은 Flow로 발전되었습니다.
