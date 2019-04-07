@@ -1,0 +1,118 @@
+![img](https://cdn-images-1.medium.com/max/2600/1*AZ5-3WdNdYyC2U0Aq7RhIg.png)
+
+ 2014년 몬트리올 대학의 이안 굿펠로우와 그의 동료들은 **GAN(적대적 생성 신경망)**이라는 놀라운 논문을 발표했습니다. 그들은 컴퓨터 그래프와 게임 이론을 기반으로 적대적인 두 모델이 back propagation을 통해 같이 학습할 수 있다는 것을 보였습니다.
+
+ 그 모델들은 두 가지 뚜렷한 역할(literally, adversarial) 역할을 합니다. 실제 데이터셋 R이 주어질 때, Generator G는 진짜 데이터와 똑같이 생긴 가짜 데이터를 생성하려고 하는 반면에, Discriminator D는 실제데이터와 G로부터 데이터를 받아 차이를 학습합니다. 굿펠로우는 G는 실제 지폐와 그들의 위조지폐를 돌일하게 만들려고 하는 위조지폐범이라고 하였고, 반면에 D는 차이를 구별하려고 하는 형사들이라고 하였습니다. 
+
+(여기서 위조지폐범은 실제 데이터를 볼 수 없으며, 오직 D의 판단만 볼 수 있습니다.)
+
+
+
+
+
+![img](https://cdn-images-1.medium.com/max/1000/1*-gFsbymY9oJUQJ-A3GTfeg.png)
+
+
+
+ GAN에서 이상적인 경우는 G는 결국에 "master forger"가 되고, D가 "두 분포를 구별할 수 없다"라고 포기할 때까지 G가 시간이 흐르면서 성능이 향상되는 것입니다.
+
+ 실제로 Goodfellow가 보인 것은 G가 기존 데이터셋에서 그 데이터를 훨씬 낮은 차원(가능한)으로 표현하는 어떤 방법을 찾는 unsupervised learning 형태의 문제를 수행할 수 있다는 것이었다. 그리고 얀 르쿤이 말했듯이, Unsupervised learning이 진정한 AI의 "cake"였다.(정말 중요한 부분이었다)
+
+ 이런 중요한 모델을 만들려면 1 ton 단위의 코드를 필요로 할 것 같은 느낌적인 느낌이 든다. 정말 그런가?
+
+ 그렇지 않다. PyTorch를 이용하면 50줄 미만의 코드로도 아주 간단한 GAN을 만들 수 있다.
+
+ GAN을 만들기에 고려해야할 구성 요소는 고작 5가지 뿐이다. 
+
+- R: 기존 데이터 세트
+- I : source of entropy로 Generator에 들어가는 Random noise
+- G: 기존 데이터 셋을 copy/mimic하려는 Generator
+- D: G의 출력을 R로부터 구별하려는 Discriminator
+- G가 D를 속일 수 있도록, D가 G를 구별할 수 있도록 가르치는 '학습' 루프
+
+
+**1.) R:** 여기서 제공하는 GAN 예제에서는 가장 간단한 종 모양 분포로 시작할 것이다. 이 함수는 평균과 표준 편차를 취하며 이러한 매개변수(평균, 표준편차)를 가진 가우시안 분포로부터 표본 데이터를 제공하는 함수를 반환한다. 샘플 코드에서 평균 4.0과 표준 편차 1.25를 사용한다.  
+
+
+
+![img](https://cdn-images-1.medium.com/max/1000/1*xsuE-nhsJOzk9lfI3rayuw.png)
+
+
+
+2.) I : Generator로의 입력도 랜덤으로 들어오지만 여러가지 랜덤 분포를 입력할 수 있다. 여기서는 이 작업을 쉽게 하기 위해서 일반 분포보다 균일한 분포를 사용하기로 한다. 그러나, 모델 G는 단순히 R을 카피하기 위해 input을 이동/스케일링 할 수는 없지만, 비선형 방식으로 데이터를 재구성할 수도 있다.
+
+![img](https://cdn-images-1.medium.com/max/1000/1*wuhEVnK25V3zXQzuCwFDAg.png)
+
+
+
+3.) G: 본 예제에서 사용하는 Generator는 두 개의 hidden layer, 세 개의 linear map가 포함된 standard feedforward 그래프이다. activation function은 hyperbolic tangent을 사용하고 있다. 
+
+G는 I로부터 균일하게 분포된 데이터 샘플을 얻을 것이고, R을 보지 않고 어떻게 해서든 R의 정규 분포를  모방할 것이다.
+
+
+
+![img](https://cdn-images-1.medium.com/max/1000/1*ZWdLJE92goGCO2IckGz3tA.png)
+
+
+
+4.) D: Discriminator code는 G의 Generator code와 매우 유사하다. 두 개의 hidden layer와 세 개의 linear map이 있는 feedforward graph이다. activation function은 sigmoid이다.  R과 G에서 샘플을 얻어 '가짜' 대 '실제'로 해석되는 0에서 1 사이의 값 1개를 출력한다. 
+
+
+
+![img](https://cdn-images-1.medium.com/max/1000/1*k92BAYSiIn49Q2sTUWnVtw.png)
+
+
+
+5.) 마지막으로, 학습 루프는 두 가지 학습이 번갈아 나타난다
+
+ 첫 번째는 정확한 라벨로 실제 데이터와 가짜 데이터에 대한 D의 학습하는 것이고, 두번째는 부정확한 라벨로 D를 속이기 위해 G를 학습하는 것이다. 이는 마치 선과 악의 경쟁처럼 이루어진다.
+
+
+
+![img](https://cdn-images-1.medium.com/max/1500/1*gNhL1T1dr4YXCTI1B5U03A.png)
+
+
+
+  비록 PyTorch를 전에 본 적이 없다고 해도, 위 코드에서 무슨 일이 일어나고 있는지 알 수 있을 것이다. 
+
+ 첫 번째 (녹색) 섹션에서는 먼저, 두 유형의 데이터를 D를 통해 push(Predict)하고 D의 추측값과 실제 라벨의 차이를 미분 가능한 cost function에 적용한다. 이 push가 'forward()' 단계다. 그런 다음 Gradient를 계산하기 위해 'backward()를 불러오게 된다. 이 단계에서는 d_optimizer step()을 호출해서 D의 파라미터를 업데이트(학습)한다. G는 사용되지만 여기서는 학습되지 않는다.
+
+그런 다음 마지막(빨간색) 섹션에서 G에 대해 동일한 작업을 수행하며, G의 출력도 D를 통해 실행하지만(위조범에게 연습할 형사를 주는 것임) 이 단계에서는 D를 최적화하거나 변경하지 않는다. 우리는 D형사가 잘못된 꼬리표를 배우는 것을 원하지는 않기 때문이다. 따라서 우리는 g_optimizer.step()만을 불러온다.
+
+그리고... 이게 다이다. 다른 GAN들도 결국 5가지 Components이다.
+
+D와 G 사이의 학습이 몇 천 라운드 지난 후에, 우리는 무엇을 얻을 수 있을까? 
+
+DIscriminator D는 매우 빨리 성능이 좋아지지만(G가 천천히 올라가는 동안), 일단 어느 정도의 성능에 도달하면 G는 가치 있는 적수를 갖게 되고 향상되기 시작한다. 정말 좋아진다.
+
+각 round에서 D 20회 훈련, G 20회 훈련하여 5000 round 이상 학습시키면,  G의 평균은 4.0을 초과하지만, 상당히 안정적이고 정확한 범위로 돌아온다. (왼쪽) 마찬가지로, 표준 편차는 처음에 잘못된 방향으로 떨어지다가 원하는 1.25 범위까지 상승하여 R과 일치한다.(오른쪽)  (기존 mean: 4.0, std: 1.25)  
+
+
+
+![img](https://cdn-images-1.medium.com/max/1500/1*2Qm33RqWBKVF3g1Vg2HnVg.png)
+
+
+
+ 기본 통계치는 결국 R과 일치한다. 더 높은 moments는 어떤가? 분포의 모양이 제대로 형성되는가? 
+
+ 결국, 4.0 평균과 1.25의 표준 편차를 가진 균일한 분포를 확실히 가질 수 있지만, 그것은 R과 실제로 일치하지 않을 것이다. G로부터 나온 분포를 보자.
+
+![img](https://cdn-images-1.medium.com/max/1000/1*qdDJ7Cglg2thKQwFs0Q1Lg.png)
+
+ 결과는 나쁘지 않다. 오른쪽 꼬리는 왼쪽보다 조금 더 뚱뚱지만 skew와 kurtosis는 가우시안적인 것을 연상시킨다.
+
+ G는 원래의 분포 R을 거의 완벽하게 재현하고 D는 진짜와 가짜를 구분하지 못하고 헤맨다. 이것이 바로 우리가 원하는 결과이다(Goodfellow의 그림 1 참조). 50줄 미만의 코드로
+
+ 이제 경고 한 마디 하자면 GANs는 까다로울 수 있다. 그리고 깨지기 쉽다. 그리고 이상한 상태에 빠졌을 때, 그 이상한 상태에서 나오지 못하는 경우가 많다. 
+
+내 샘플 코드를 10회(각각 5,000 round 이상) 실행하면 다음과 같은 10개의 분포를 볼 수 있었다.
+
+
+  
+
+![img](https://cdn-images-1.medium.com/max/1500/1*EmryA3L8HkzRa6zHKq07PQ.png)
+
+  10회의 결과 중 8회 결과의 최종 분포가 상당히 양호하며, 4의 평균과 1.5의 표준편차를 가진 가우시안과 유사하다. 그러나 두 번의 결과는 그렇지 않았다. 한 번의 경우(#5)는 평균 6.0 전후의 오목한 분포가 있고 마지막 결과(#10)에는 -11에 얇은 피크가 있다! 여러분이 GAN을 거의 모든 상황에 적용하기 시작할 때, 이러한 현상을 또 보게 될 것이다. 예를 들어, GAN은 일반적인 지도 학습의 워크플로우만큼 안정적이지는 않다. 
+
+하지만 GAN이 제대로 학습 된다면 정말 마법과 같다.
+
